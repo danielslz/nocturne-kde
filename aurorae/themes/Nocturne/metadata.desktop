@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Nocturne
+Comment=Dark macOS-style window decoration with rounded corners — Tokyo Night / Catppuccin palette
+Type=Service
+X-KDE-ServiceTypes=KWin/Decoration
+X-KDE-Library=org.kde.kwin.aurorae
+
+[X-KDE-Aurorae]
+X-KDE-Theme-ClosewithButtonAbove=false

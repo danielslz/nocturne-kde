@@ -1,0 +1,7 @@
+# caches / temporários
+*.kcache
+*~
+.DS_Store
+
+# nada de dados pessoais ou screenshots com conteúdo de tela crua
+# (adicione aqui qualquer print que não deva ir ao repositório)

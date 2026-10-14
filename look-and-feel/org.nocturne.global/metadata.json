@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "",
+                "Name": "Daniel"
+            }
+        ],
+        "Category": "",
+        "Description": "Nocturne — a dark, macOS-inspired global theme with blur, rounded corners and an integrated window decoration. Tokyo Night / Catppuccin palette.",
+        "EnabledByDefault": true,
+        "Id": "org.nocturne.global",
+        "License": "GPL-3.0+",
+        "Name": "Nocturne",
+        "Version": "1.0",
+        "Website": ""
+    },
+    "KPackageStructure": "Plasma/LookAndFeel"
+}
