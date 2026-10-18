@@ -1,45 +1,57 @@
-// Nocturne global theme — default desktop/panel layout
-// A slim floating top panel + a centered, floating bottom dock (macOS-style).
+// Nocturne global theme — default desktop/panel layout (Plasma 6)
+//
+// Estratégia defensiva: SEMPRE começa carregando o painel padrão via template.
+// Assim, se qualquer passo adicional falhar, o usuário nunca fica sem painel
+// (foi esse o bug da versão anterior, que usava propriedades inexistentes como
+// `panel.floating` / `panel.lengthMode` e abortava deixando o desktop vazio).
 
-var plasmaVersion = parseInt(plasma.getApiVersion(1)) || 1;
+// 1) Painel padrão garantido -------------------------------------------------
+loadTemplate("org.kde.plasma.desktop.defaultPanel")
 
-// ---- Desktop containment ----
-var allDesktops = desktops();
-for (var i = 0; i < allDesktops.length; i++) {
-    var d = allDesktops[i];
-    d.wallpaperPlugin = "org.kde.image";
-    d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
-}
+// 2) Papel de parede ---------------------------------------------------------
+try {
+    var desktopsArray = desktopsForActivity(currentActivity());
+    for (var j = 0; j < desktopsArray.length; j++) {
+        desktopsArray[j].wallpaperPlugin = "org.kde.image";
+    }
+} catch (e) { /* ignora: não vale deixar o desktop sem painel por causa do wallpaper */ }
 
-// ---- Top panel: global menu-ish bar with clock + tray ----
-var topPanel = new Panel();
-topPanel.location = "top";
-topPanel.height = Math.round(gridUnit * 1.6);
-topPanel.floating = true;
+// 3) Painel superior estilo macOS (menu global + relógio + bandeja) ----------
+//    Envolto em try/catch: se algo falhar, o painel padrão do passo 1 continua.
+try {
+    var topPanel = new Panel();
+    topPanel.location = "top";
+    topPanel.height = Math.round(gridUnit * 1.6);
 
-var kickoff = topPanel.addWidget("org.kde.plasma.kickoff");
-kickoff.currentConfigGroup = ["Shortcuts"];
-kickoff.writeConfig("global", "Alt+F1");
+    // "flutuante" é uma opção de configuração do containment do painel,
+    // não uma propriedade do objeto Panel na API de script.
+    topPanel.currentConfigGroup = ["Configuration", "General"];
+    topPanel.writeConfig("floating", true);
 
-topPanel.addWidget("org.kde.plasma.appmenu");
-topPanel.addWidget("org.kde.plasma.panelspacer");
-topPanel.addWidget("org.kde.plasma.systemtray");
-topPanel.addWidget("org.kde.plasma.digitalclock");
+    topPanel.addWidget("org.kde.plasma.kickoff");
+    topPanel.addWidget("org.kde.plasma.appmenu");
+    topPanel.addWidget("org.kde.plasma.panelspacer");
+    topPanel.addWidget("org.kde.plasma.systemtray");
+    topPanel.addWidget("org.kde.plasma.digitalclock");
+} catch (e) { /* mantém apenas o painel padrão */ }
 
-// ---- Bottom dock: centered, floating task manager ----
-var dock = new Panel();
-dock.location = "bottom";
-dock.height = Math.round(gridUnit * 3);
-dock.floating = true;
-// Center the dock and shrink it to content width
-dock.alignment = "center";
-dock.lengthMode = "fit";
+// 4) Dock inferior centralizado e flutuante ----------------------------------
+try {
+    var dock = new Panel();
+    dock.location = "bottom";
+    dock.height = Math.round(gridUnit * 3);
+    dock.alignment = "center";
 
-var tasks = dock.addWidget("org.kde.plasma.icontasks");
-tasks.currentConfigGroup = ["General"];
-tasks.writeConfig("launchers", [
-    "applications:org.kde.dolphin.desktop",
-    "applications:org.kde.konsole.desktop",
-    "applications:systemsettings.desktop"
-]);
-tasks.writeConfig("showOnlyCurrentDesktop", false);
+    dock.currentConfigGroup = ["Configuration", "General"];
+    dock.writeConfig("floating", true);
+
+    var tasks = dock.addWidget("org.kde.plasma.icontasks");
+    tasks.currentConfigGroup = ["General"];
+    tasks.writeConfig("launchers", [
+        "preferred://filemanager",
+        "applications:org.kde.konsole.desktop",
+        "preferred://browser"
+    ]);
+    tasks.writeConfig("showOnlyCurrentDesktop", false);
+    tasks.reloadConfig();
+} catch (e) { /* mantém o painel padrão + topo, se o dock falhar */ }
