@@ -98,7 +98,16 @@ dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.re
 6. **Sombra: use a nativa do KWin.** Não desenhe regiões `shadow-*` no SVG — elas
    geram halo assimétrico. Sem `shadow-*`, o KWin aplica sombra simétrica.
 
-7. **Não comprometa dados pessoais.** Nunca faça commit de screenshots que
+7. **Não adicione `layout.js` ao look-and-feel.** Foi removido de propósito: no
+   Plasma 6 desta distro o plasmashell não respeita o alinhamento de painel por
+   script (dock fica preso à esquerda) e um erro no script deixa o desktop SEM
+   painel. O Global Theme deve preservar o layout de painéis do usuário.
+
+8. **Tema de ícones exige limpar cache.** Trocar `[Icons] Theme` +
+   `plasma-changeicons` não basta; apague `~/.cache/icon-cache.kcache` e
+   reinicie o plasmashell, senão os ícones antigos continuam.
+
+9. **Não comprometa dados pessoais.** Nunca faça commit de screenshots que
    mostrem conteúdo de tela com texto (conversas, e-mails, caminhos). Antes de
    commitar, rode uma varredura:
    ```bash

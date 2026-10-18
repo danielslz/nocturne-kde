@@ -17,7 +17,7 @@ customizada com botões monocromáticos integrados.
 | **Color scheme** | Esquema de cores escuro `Nocturne.colors` |
 | **Plasma desktop theme** | Painéis/popups translúcidos com blur (`Nocturne`) |
 | **Aurorae decoration** | Decoração de janelas com cantos arredondados, botões à direita e ícone à esquerda |
-| **Global Theme (look-and-feel)** | Pacote que amarra tudo + layout de painéis estilo macOS |
+| **Global Theme (look-and-feel)** | Pacote que amarra as peças acima num tema único (preserva o layout de painéis) |
 | **GTK overrides** | `gtk.css` (GTK3 e GTK4/libadwaita) para integrar apps GTK à paleta |
 
 ### Paleta
@@ -54,13 +54,19 @@ Para apenas copiar os arquivos sem aplicar:
 
 ### Global Theme completo (opcional)
 
-O instalador **não** aplica o pacote look-and-feel automaticamente porque ele
-reorganiza seus painéis (adiciona uma barra superior flutuante + um dock inferior
-centralizado estilo macOS). Para aplicá-lo:
+O pacote look-and-feel (`org.nocturne.global`) amarra cor, tema de desktop e
+decoração num tema único. Ele **não** reorganiza seus painéis — o layout de
+painéis atual é preservado. Para aplicá-lo:
 
 ```bash
 plasma-apply-lookandfeel org.nocturne.global
 ```
+
+> **Nota:** uma versão anterior tentava criar um layout estilo macOS (barra
+> superior + dock centralizado) via `layout.js`. Isso foi removido: no Plasma 6
+> desta distro o plasmashell não respeita o alinhamento de painel definido por
+> script (o dock ficava preso à esquerda) e, em caso de erro no script, o
+> desktop podia ficar sem nenhum painel. Veja `docs/NOTAS-TECNICAS.md`.
 
 ### Desinstalar
 

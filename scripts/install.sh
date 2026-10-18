@@ -65,6 +65,20 @@ if command -v gsettings >/dev/null 2>&1; then
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"  2>/dev/null || true
 fi
 
+say "Aplicando tema de ícones Tela-dark"
+# Só aplica se o tema existir; caso contrário mantém o atual.
+if [ -f "$DATA/icons/Tela-dark/index.theme" ] || [ -f /usr/share/icons/Tela-dark/index.theme ]; then
+    kwriteconfig6 --file kdeglobals --group Icons --key Theme "Tela-dark"
+    # IMPORTANTE: o cache de ícones retém os antigos; sem limpá-lo + reiniciar o
+    # plasmashell, a troca de ícones não aparece (plasma-changeicons sozinho não
+    # basta nesta versão).
+    rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/icon-cache.kcache" 2>/dev/null || true
+    [ -x /usr/libexec/plasma-changeicons ] && /usr/libexec/plasma-changeicons Tela-dark >/dev/null 2>&1 || true
+    RESTART_SHELL=1
+else
+    say "  (Tela-dark não encontrado; pulei o tema de ícones)"
+fi
+
 say "Aplicando decoração de janelas (Aurorae / Nocturne)"
 # IMPORTANTE: a biblioteca correta é 'org.kde.kwin.aurorae' (sem sufixos).
 # Uma library errada faz o KWin ignorar a troca silenciosamente.
@@ -94,10 +108,19 @@ kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled     true
 kwriteconfig6 --file kwinrc --group Plugins --key contrastEnabled true
 reconfig
 
+# Reinicia o plasmashell se o tema de ícones mudou (para o cache ser relido).
+if [ "${RESTART_SHELL:-0}" -eq 1 ] && command -v kquitapp6 >/dev/null 2>&1; then
+    say "Reiniciando o plasmashell para aplicar os ícones"
+    kquitapp6 plasmashell >/dev/null 2>&1 || true
+    sleep 2
+    (setsid plasmashell >/dev/null 2>&1 &) || true
+fi
+
 say "Pronto! Nocturne instalado e aplicado."
 echo
-echo "  Opcional — aplicar o Global Theme completo (reorganiza painéis):"
+echo "  Opcional — Global Theme completo (cores+tema+decoração num pacote):"
 echo "      plasma-apply-lookandfeel org.nocturne.global"
+echo "  (NÃO reorganiza seus painéis — o layout de painéis é preservado.)"
 echo
 echo "  Apps GTK já abertos precisam ser reabertos para pegar o tema."
 echo "  Janelas maximizadas: restaure e maximize de novo para atualizar a decoração."

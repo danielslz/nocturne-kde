@@ -10,7 +10,7 @@ Um "Global Theme" do Plasma é a soma de peças independentes:
 1. **Color scheme** (`.colors`) — cores do sistema (Qt/KDE).
 2. **Plasma desktop theme** — SVGs de painéis, popups, tooltips, system tray.
 3. **Aurorae decoration** — a moldura das janelas (barra de título, botões).
-4. **Look-and-feel** — pacote que referencia as peças acima + layout de painéis.
+4. **Look-and-feel** — pacote que referencia as peças acima (sem layout de painéis; veja a seção sobre layout abaixo).
 5. **GTK** — apps GTK não respeitam o Plasma; precisam de config própria.
 
 Cada peça foi tratada separadamente porque falham de formas diferentes.
@@ -137,6 +137,41 @@ Apps GTK ignoram o Plasma. Dois níveis de configuração:
   que leem do dconf.
 
 Apps GTK já abertos precisam ser reabertos para pegar o tema.
+
+## Layout de painéis (por que foi removido)
+
+A versão inicial do look-and-feel trazia um `contents/layouts/*.js` que criava um
+layout estilo macOS (painel superior + dock inferior centralizado). Isso foi
+**removido** por dois motivos descobertos em teste real no Plasma 6 / Aurora:
+
+1. **Risco de desktop sem painel.** A primeira versão usava propriedades
+   inexistentes na API de script (`panel.floating`, `panel.lengthMode`,
+   `dock.alignment` como setter) e `desktops()` em vez de
+   `desktopsForActivity()`. Qualquer exceção abortava o script e o desktop ficava
+   **sem nenhum painel**. Mesmo após corrigir a API (validada via
+   `evaluateScript`: `TOP_OK DOCK_OK`), permaneceu o problema 2.
+
+2. **Alinhamento de painel não é respeitado.** Mesmo com `alignment=132`
+   (center) e `min/maxLength` gravados no grupo principal de
+   `[PlasmaViews][Panel N]` no `plasmashellrc`, o plasmashell desta versão
+   mantinha o dock **preso à esquerda**. Nem a API de script (`panel.alignment`),
+   nem a config + reinício completo do plasmashell surtiram efeito visual. O
+   runtime reportava `align=center` enquanto a tela mostrava o painel à esquerda.
+
+Conclusão: o alinhamento/centralização de painel só é confiável pela **interface
+gráfica** (modo de edição do painel). Como um tema não deve depender de passos
+manuais nem arriscar deixar o usuário sem painel, o `layout.js` foi removido. O
+Global Theme agora **preserva o layout de painéis** existente.
+
+Se um dia for reintroduzido um dock, o caminho é: criar o painel via
+`new Panel()`, e para o alinhamento instruir o usuário a centralizar pela GUI, ou
+investigar a API mais nova de `floating panel` do Plasma.
+
+## Tema de ícones não aplica (cache)
+
+Trocar `[Icons] Theme` no `kdeglobals` e rodar `plasma-changeicons` **não basta**:
+o `~/.cache/icon-cache.kcache` retém os ícones antigos. É preciso apagar esse
+cache e reiniciar o plasmashell para a mudança aparecer. O `install.sh` faz isso.
 
 ## Pontos em aberto / melhorias futuras
 
