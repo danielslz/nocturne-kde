@@ -47,6 +47,11 @@ mkdir -p "$CONF/gtk-3.0" "$CONF/gtk-4.0"
 cp -f "$SRC/gtk/gtk-3.0/gtk.css" "$CONF/gtk-3.0/gtk.css"
 cp -f "$SRC/gtk/gtk-4.0/gtk.css" "$CONF/gtk-4.0/gtk.css"
 
+say "Instalando papéis de parede"
+mkdir -p "$DATA/wallpapers/Nocturne"
+cp -f "$SRC"/wallpapers/*.png "$DATA/wallpapers/Nocturne/" 2>/dev/null || true
+cp -f "$SRC"/wallpapers/*.svg "$DATA/wallpapers/Nocturne/" 2>/dev/null || true
+
 if [[ "$APPLY" -eq 0 ]]; then
     say "Arquivos instalados. Pulei a aplicação (--no-apply)."
     exit 0
@@ -77,6 +82,11 @@ if [ -f "$DATA/icons/Tela-dark/index.theme" ] || [ -f /usr/share/icons/Tela-dark
     RESTART_SHELL=1
 else
     say "  (Tela-dark não encontrado; pulei o tema de ícones)"
+fi
+
+say "Aplicando papel de parede Nocturne"
+if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
+    plasma-apply-wallpaperimage "$DATA/wallpapers/Nocturne/nocturne-1920x1080.png" >/dev/null 2>&1 || true
 fi
 
 say "Aplicando decoração de janelas (Aurorae / Nocturne)"

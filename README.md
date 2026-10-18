@@ -86,6 +86,30 @@ Reverte para o Breeze Dark e remove os arquivos do tema.
   `breeze_cursors`. Ajuste em `look-and-feel/.../contents/defaults` se preferir
   outros.
 
+## Papéis de parede
+
+Em `wallpapers/` há três variantes (SVG vetorial + PNG 1920×1080), todas na
+estética Nocturne — céu noturno com montanhas minimalistas, aurora difusa e
+estrelas:
+
+| Arquivo | Tom |
+|---|---|
+| `nocturne-*` | Equilíbrio azul + roxo (padrão) |
+| `nocturne-blue-*` | Mais azul/ciano (frio) |
+| `nocturne-purple-*` | Mais roxo/lavanda (crepúsculo) |
+
+Aplicar um deles:
+
+```bash
+plasma-apply-wallpaperimage ~/.local/share/wallpapers/Nocturne/nocturne-1920x1080.png
+```
+
+Os SVGs são vetoriais — para gerar em outra resolução:
+
+```bash
+magick -background none -density 96 wallpapers/nocturne.svg -resize 2560x1440 saida.png
+```
+
 ## Compatibilidade
 
 - **Plasma 6.x** (Wayland e X11). Desenvolvido no Plasma 6.7 / Wayland.

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" version="1.1">
+ <defs>
+  <!-- fundo: gradiente diagonal escuro Tokyo Night -->
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+   <stop offset="0"   stop-color="#16161e"/>
+   <stop offset="0.45" stop-color="#1a1b26"/>
+   <stop offset="1"   stop-color="#24283b"/>
+  </linearGradient>
+
+  <!-- brilho aurora azul (canto inferior esquerdo) -->
+  <radialGradient id="glowBlue" cx="0.25" cy="0.85" r="0.7">
+   <stop offset="0"   stop-color="#7aa2f7" stop-opacity="0.28"/>
+   <stop offset="0.5" stop-color="#7aa2f7" stop-opacity="0.08"/>
+   <stop offset="1"   stop-color="#7aa2f7" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- brilho aurora roxo (canto superior direito) -->
+  <radialGradient id="glowPurple" cx="0.8" cy="0.2" r="0.65">
+   <stop offset="0"   stop-color="#bb9af7" stop-opacity="0.22"/>
+   <stop offset="0.5" stop-color="#bb9af7" stop-opacity="0.06"/>
+   <stop offset="1"   stop-color="#bb9af7" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- brilho ciano sutil (centro-direita) -->
+  <radialGradient id="glowCyan" cx="0.62" cy="0.58" r="0.4">
+   <stop offset="0"   stop-color="#7dcfff" stop-opacity="0.12"/>
+   <stop offset="1"   stop-color="#7dcfff" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- faixa de aurora ondulada -->
+  <linearGradient id="auroraBand" x1="0" y1="0" x2="1" y2="0">
+   <stop offset="0"    stop-color="#7aa2f7" stop-opacity="0"/>
+   <stop offset="0.35" stop-color="#7aa2f7" stop-opacity="0.18"/>
+   <stop offset="0.6"  stop-color="#bb9af7" stop-opacity="0.16"/>
+   <stop offset="1"    stop-color="#9ece6a" stop-opacity="0"/>
+  </linearGradient>
+
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+   <feGaussianBlur stdDeviation="40"/>
+  </filter>
+ </defs>
+
+ <!-- base -->
+ <rect width="1920" height="1080" fill="url(#bg)"/>
+
+ <!-- brilhos aurora -->
+ <rect width="1920" height="1080" fill="url(#glowBlue)"/>
+ <rect width="1920" height="1080" fill="url(#glowPurple)"/>
+ <rect width="1920" height="1080" fill="url(#glowCyan)"/>
+
+ <!-- faixa de aurora ondulada, difusa -->
+ <path d="M -100,620 C 400,520 760,760 1120,600 C 1480,440 1700,560 2020,500 L 2020,780 C 1700,840 1480,700 1120,820 C 760,940 400,760 -100,860 Z"
+       fill="url(#auroraBand)" filter="url(#soft)" opacity="0.9"/>
+
+ <!-- montanhas minimalistas no rodapé (silhueta escura, dá profundidade) -->
+ <path d="M0,1080 L0,900 L260,760 L520,880 L820,700 L1120,860 L1420,720 L1700,870 L1920,780 L1920,1080 Z"
+       fill="#13131a" opacity="0.85"/>
+ <path d="M0,1080 L0,980 L360,870 L680,960 L1000,840 L1340,950 L1660,860 L1920,940 L1920,1080 Z"
+       fill="#0f0f16" opacity="0.9"/>
+
+ <!-- estrelas/pontos de luz discretos -->
+ <g fill="#c0caf5">
+  <circle cx="300"  cy="180" r="1.6" opacity="0.7"/>
+  <circle cx="520"  cy="120" r="1.1" opacity="0.5"/>
+  <circle cx="760"  cy="240" r="1.4" opacity="0.6"/>
+  <circle cx="980"  cy="140" r="1.0" opacity="0.45"/>
+  <circle cx="1180" cy="220" r="1.6" opacity="0.65"/>
+  <circle cx="1420" cy="160" r="1.2" opacity="0.55"/>
+  <circle cx="1600" cy="260" r="1.5" opacity="0.6"/>
+  <circle cx="1780" cy="130" r="1.0" opacity="0.4"/>
+  <circle cx="200"  cy="340" r="1.1" opacity="0.5"/>
+  <circle cx="1500" cy="360" r="1.0" opacity="0.45"/>
+  <circle cx="880"  cy="60"  r="1.2" opacity="0.5"/>
+  <circle cx="1320" cy="80"  r="1.0" opacity="0.4"/>
+ </g>
+ <!-- destaques coloridos (accents) como estrelas maiores -->
+ <circle cx="640"  cy="300" r="2.2" fill="#7aa2f7" opacity="0.8"/>
+ <circle cx="1240" cy="300" r="2.0" fill="#bb9af7" opacity="0.75"/>
+ <circle cx="1680" cy="420" r="1.8" fill="#7dcfff" opacity="0.7"/>
+</svg>
