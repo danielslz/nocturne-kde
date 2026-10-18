@@ -1,6 +1,6 @@
 # Screenshots
 
-- `preview.png` — preview provisório gerado a partir dos SVGs do tema + paleta.
+- `nocturne-desktop.png` — área de trabalho com o tema aplicado (wallpaper roxo,
+  menu Kickoff, ícones Tela-dark). Também usado como preview do Global Theme em
+  `look-and-feel/org.nocturne.global/contents/previews/preview.png`.
 - `botao-restaurar.png` — os 5 estados do botão de restaurar (render do SVG).
-
-Screenshots reais da área de trabalho serão adicionados aqui.

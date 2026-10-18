@@ -5,10 +5,7 @@ sob Wayland). Paleta baseada em **Tokyo Night** + **Catppuccin**, com painéis
 translúcidos, blur, cantos arredondados e uma decoração de janelas Aurorae
 customizada com botões monocromáticos integrados.
 
-![Nocturne — preview](screenshots/preview.png)
-
-> O preview acima é provisório (gerado a partir dos SVGs do tema + paleta).
-> Screenshots reais da área de trabalho serão adicionados em `screenshots/`.
+![Nocturne — área de trabalho](screenshots/nocturne-desktop.png)
 
 ## O que está incluído
 
