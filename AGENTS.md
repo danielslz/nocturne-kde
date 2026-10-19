@@ -19,6 +19,16 @@ custou horas uma vez.
 - `qdbus` **não** existe aqui; use `dbus-send` (ver abaixo).
 - Shell interativo do dono é **fish**; os scripts em `scripts/` são **bash**.
   Não use heredoc nem `for ... in` presumindo bash no shell interativo.
+- **Apps são majoritariamente Flatpak** (host imutável, quase nada nativo).
+  Flatpaks são sandboxed, mas neste ambiente já herdam o tema GTK do host via um
+  `flatpak override --user` global com `filesystems=xdg-config/gtk-4.0:ro`
+  (confirmado: `org.gnome.Calculator` pega o tema sem config extra). Portanto NÃO
+  force overrides nem mexa no `install.sh` para isso sem necessidade.
+  - Ressalva: o override cobre só **gtk-4.0**. Apps **GTK3** em Flatpak podem não
+    receber `gtk-3.0/gtk.css` (faltaria `xdg-config/gtk-3.0:ro`). Confirme com um
+    app GTK3 Flatpak real antes de assumir paridade GTK3/GTK4.
+  - Para testar um Flatpak: `flatpak info --show-permissions <app-id>` mostra os
+    `filesystems` efetivos; apps já abertos precisam ser reabertos.
 
 ## Acesso à internet
 
