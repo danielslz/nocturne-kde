@@ -20,6 +20,17 @@ custou horas uma vez.
 - Shell interativo do dono é **fish**; os scripts em `scripts/` são **bash**.
   Não use heredoc nem `for ... in` presumindo bash no shell interativo.
 
+## Acesso à internet
+
+- **Consulta a documentação é livre.** Pode pesquisar e acessar sites de
+  documentação (KDE/Plasma, Aurorae, GNOME/GTK/libadwaita, freedesktop,
+  ImageMagick, specs) sem pedir confirmação a cada acesso. Prefira fontes
+  oficiais a blogs quando houver conflito.
+- Sempre cite a fonte (link) quando trouxer uma informação da internet, para
+  rastreabilidade.
+- Não envie conteúdo do repositório, dados pessoais ou segredos para serviços
+  externos. Acesso à internet é só para **leitura** de documentação pública.
+
 ## Estrutura
 
 ```
