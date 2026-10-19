@@ -33,6 +33,10 @@ rm -f "$CONF/gtk-3.0/gtk.css" "$CONF/gtk-4.0/gtk.css"
 # usuário, inclusive os que não são nossos (ex.: um unset-environment=
 # QT_QPA_PLATFORMTHEME pré-existente no override global). Removemos apenas o
 # GTK_THEME e os nossos filesystems de leitura dos gtk.css.
+# Ressalva: --unset-environment=GTK_THEME é incondicional (o flatpak não remove
+# "só se o valor for X"). Se você tiver definido um GTK_THEME próprio no override
+# global por outro motivo, ele será removido junto. No fluxo normal do Nocturne o
+# único GTK_THEME é o nosso (Breeze:dark), então isso não é um problema.
 if command -v flatpak >/dev/null 2>&1; then
     say "Revertendo overrides GTK de Flatpaks"
     flatpak override --user --unset-environment=GTK_THEME 2>/dev/null || true
