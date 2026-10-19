@@ -37,3 +37,41 @@
 @define-color popover_bg_color #1f2235;
 @define-color popover_fg_color #c0caf5;
 @define-color sidebar_bg_color #1a1b26;
+
+/* ---------------------------------------------------------------------------
+ * Moldura CSD (client-side decoration) — alinhar ao Aurorae/Nocturne.
+ * O Breeze-Dark (tema base GTK) desenha uma faixa externa espessa (margin +
+ * box-shadow com blur largo) que o usuário lê como "borda grande" e destoa do
+ * lado Qt. Aqui igualamos o alvo do Aurorae: cantos superiores r=10, borda ~1px
+ * (Nocturnerc Border*=1), cor #2a2e45 (@borders). NÃO mexe em cor de fundo nem
+ * na headerbar (que permanece opaca).
+ * --------------------------------------------------------------------------- */
+decoration {
+  border-radius: 10px 10px 0 0;
+  border: 1px solid @borders;
+  /* sombra enxuta: o KWin desenha a sombra real da janela. Mantemos uma faixa
+   * mínima para ainda permitir redimensionar pela borda. */
+  margin: 1px;
+  box-shadow: none;
+}
+
+decoration:backdrop {
+  /* janela inativa: mesma geometria para não "pular de tamanho" */
+  border-radius: 10px 10px 0 0;
+  border: 1px solid @unfocused_borders;
+  margin: 1px;
+  box-shadow: none;
+}
+
+/* Maximizada / encostada (tiled): sem cantos nem faixa externa. */
+decoration.maximized,
+decoration.tiled,
+decoration.tiled-top,
+decoration.tiled-bottom,
+decoration.tiled-left,
+decoration.tiled-right,
+decoration.fullscreen {
+  border-radius: 0;
+  margin: 0;
+  box-shadow: none;
+}

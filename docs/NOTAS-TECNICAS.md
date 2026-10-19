@@ -174,6 +174,52 @@ Apps GTK ignoram o Plasma. Dois níveis de configuração:
 
 Apps GTK já abertos precisam ser reabertos para pegar o tema.
 
+### Moldura CSD (borda/cantos) alinhada ao Aurorae
+
+Os `gtk.css` passaram a sobrescrever também a **geometria da moldura CSD**
+(client-side decoration), não só as cores. Antes, como os dois arquivos só tinham
+`@define-color`, a borda/cantos da janela GTK eram 100% herdados do tema base
+`Breeze-Dark`: uma faixa externa espessa (`margin` + `box-shadow` com blur largo
+no nó `decoration`) que o usuário lê como "borda grande" e destoa das janelas
+Qt/Aurorae.
+
+Alvo copiado do lado Qt (decoração Aurorae do Nocturne):
+
+- Borda ~1px — `Nocturnerc [Layout]` tem `BorderLeft/Right/Bottom=1`, `BorderTop=0`.
+- Raio dos cantos superiores 10px — mesma decoração r=10 da máscara do Aurorae.
+- Cor da borda `#2a2e45` (`@borders`, dentro da paleta).
+
+Regras aplicadas:
+
+- **GTK3** (`gtk-3.0/gtk.css`): seletor `decoration` (e `decoration:backdrop`
+  para janela inativa) com `border-radius: 10px 10px 0 0` (topo arredondado,
+  base reta), `border: 1px solid @borders`, `box-shadow: none` (a sombra real é
+  a nativa do KWin) e `margin: 1px` (faixa mínima para ainda redimensionar pela
+  borda — `margin: 0` chega a impedir o resize em alguns casos).
+- **GTK4/libadwaita** (`gtk-4.0/gtk.css`): o raio é aplicado na `window`
+  (`window.csd:not(.maximized):not(.tiled):not(.fullscreen):not(.solid-csd)`,
+  `border-radius: 10px 10px 0 0`) e a faixa externa/sombra no nó `decoration`
+  (mesmos `border 1px`, `box-shadow: none`, `margin: 1px`).
+
+**Maximizado / encostado (tiled) / tela cheia:** precisam de `border-radius: 0`
+e `margin: 0`, senão sobra canto arredondado e faixa externa numa janela que
+deveria encostar na borda da tela. Tratado em `decoration.maximized`/`.tiled*`/
+`.fullscreen` (GTK3) e `window.maximized`/`.tiled`/`.fullscreen`/`.solid-csd`
+(GTK4).
+
+Fontes consultadas para a forma de override no GTK4/libadwaita (conteúdo
+reescrito para conformidade de licenciamento): o nó `decoration` controla
+`margin`/`box-shadow`/`border-radius` da faixa CSD e o padrão para resize é
+`box-shadow: none; margin: 1px`
+([planify#303](https://github.com/alainm23/planner/issues/303),
+[zorin-desktop-themes#11](https://github.com/ZorinOS/zorin-desktop-themes/issues/11));
+o raio é zerado nos estados `.maximized`/`.tiled` via seletores de estado da
+`window`
+([small adwaita tweaks](https://gist.github.com/davidphilipbarr/c56e9e1c89eaae2a1535afd995141633)).
+**Limitação:** alguns apps libadwaita forçam o próprio estilo e podem ignorar
+estas regras ([discuss.kde.org](https://discuss.kde.org/t/approach-to-make-libadwaita-apps-look-native-on-plasma/31428)) —
+o objetivo é alinhar a maioria dos apps GTK CSD, não 100%.
+
 ## Layout de painéis (por que foi removido)
 
 A versão inicial do look-and-feel trazia um `contents/layouts/*.js` que criava um
