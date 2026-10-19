@@ -46,5 +46,9 @@ fi
 
 say "Limpando cache de SVG"
 rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/ksvg-elements" 2>/dev/null || true
+# O KImageCache de pixmaps do tema é removido junto para não reter renders do
+# Nocturne após a desinstalação. A pasta translucent/ instalada já sai no
+# 'rm -rf "$DATA/plasma/desktoptheme/Nocturne"' acima (é subpasta do tema).
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/plasma_theme_Nocturne.kcache" 2>/dev/null || true
 
 say "Nocturne removido. Pode ser necessário reabrir apps GTK."

@@ -125,41 +125,73 @@ radiais dos cantos não ficavam simétricos e as sombras laterais sólidas se
 somavam. **Solução:** remover todas as regiões `shadow-*`. Sem sombra custom, o
 KWin aplica a própria sombra nativa, que é simétrica e suave.
 
-## Blur atrás de painéis e popups: exige `hint-compositing-blur`
+## Blur atrás de painéis e popups: mecanismo real (KWin + `mask-*`)
 
-Mesmo com o efeito de blur do KWin ligado (`kwinrc [Plugins] blurEnabled=true`)
-e o tema Nocturne ativo, os painéis e popups não borravam o fundo. Causa: no
-Plasma 6 o KSvg/FrameSvg só pede blur ao compositor quando o SVG de fundo tem um
-elemento com `id="hint-compositing-blur"`. Os SVGZ de fundo tinham apenas
-`hint-*-margin`, `hint-*-inset`, `hint-tile-center` e `mask-*` — nenhum pedia
-blur.
+Uma tentativa anterior adicionou um `<rect id="hint-compositing-blur">` invisível
+nos SVGZ de fundo acreditando que o KSvg/FrameSvg pedia blur ao compositor só
+quando esse elemento existia. **Isso estava errado:** o id `hint-compositing-blur`
+**não existe** no código-fonte do Plasma 6 (nem em `ksvg`, nem em `libplasma`) —
+é um elemento **inerte**, ignorado pelo renderizador. Ele foi **removido** dos
+quatro SVGZ (`widgets/panel-background.svgz`, `widgets/background.svgz`,
+`widgets/tooltip.svgz`, `dialogs/background.svgz`).
 
-**Correção:** adicionar um `<rect id="hint-compositing-blur">` (invisível,
-`fill:none`) cobrindo a área do tile `center` em cada SVG de fundo translúcido:
+Como o blur realmente funciona no Plasma 6:
 
-- `widgets/panel-background.svgz` (painel — primário)
-- `widgets/background.svgz`
-- `dialogs/background.svgz` (popups)
-- `widgets/tooltip.svgz`
+- Quem pede o blur é o **KWin**, não o SVG. O plasmashell chama
+  `KWindowEffects::enableBlurBehind(janela, theme.blurBehindEnabled(), mask)`,
+  onde `mask = FrameSvg::mask()` — ou seja, a **região recortada pelos elementos
+  `mask-*`** do SVG de fundo (o mesmo 9-slice `mask-center`/`mask-left`/… usado
+  para os cantos arredondados). O `blurBehindEnabled` do tema é `true` por
+  padrão, então o blur já é solicitado sem nenhum hint no SVG. (invent.kde.org:
+  `plasma/libplasma` — `theme_p.cpp`, `dialog.cpp`, `plasmawindow.cpp`.)
+- Logo, o que habilita o blur é: **(a)** as regiões `mask-*` presentes no fundo e
+  **(b)** o efeito de blur do KWin ligado (`kwinrc [Plugins] blurEnabled=true`,
+  que o `install.sh` garante). Nenhum atributo especial no SVG é necessário.
+- Para o blur **aparecer visualmente** o `center` precisa ser translúcido
+  (alpha < 1). `panel-background`, `dialogs/background` e `tooltip` usam
+  `opacity:0.85` no `center`; `widgets/background` mantém o `center` **opaco**
+  (`opacity:1`) por design — ali o blur fica inerte, e a opacidade NÃO deve ser
+  mexida para não alterar todos os frames de widget.
 
-Detalhes que valem lembrar:
+### Variante `translucent/` (o que o Plasma serve com blur/contraste)
 
-- O KWin usa só a **existência e os limites (bounds)** do elemento, não o
-  preenchimento. Os bounds do rect definem a região borrada, então ele cobre a
-  mesma área do `center`.
-- O fundo precisa ser **translúcido** (alpha < 1) para o blur aparecer. O
-  `panel-background`, `dialogs/background` e `tooltip` já usam `opacity:0.85` com
-  `ColorScheme-Background`, então o blur surge só com o hint presente. O
-  `widgets/background` tem o `center` opaco (`opacity:1`); o hint foi adicionado
-  mesmo assim (fica inerte enquanto o fundo for opaco) e a opacidade NÃO foi
-  mexida, para não alterar o visual de todos os frames de widget — mudança
-  mínima e sem efeito colateral.
-- Os arquivos em `.../opaque/` ficam **de fora de propósito** (fallback sem
-  transparência): não têm o hint e não devem ter.
+Seguindo o padrão do Breeze, o tema agora tem uma pasta `translucent/` espelhando
+os SVGZ translúcidos corrigidos (`translucent/widgets/*`, `translucent/dialogs/*`,
+sem `hint-compositing-blur`, com os `mask-*` preservados). Quando o compositor
+suporta blur/contraste, o KSvg seleciona essa variante
+(`Svg::setSelectors({"translucent"})` / `ImageSet`); se a pasta não existir, há
+**fallback** para `widgets/`/`dialogs/`. A `opaque/` continua sendo o fallback sem
+transparência (não tem `mask-*` translúcido e fica de fora de propósito).
+(develop.kde.org: [Understanding Plasma Styles](https://develop.kde.org/docs/plasma/theme/theme-details/);
+invent.kde.org: `frameworks/ksvg` — `imageset_p.cpp`, `svg.cpp`.)
+
+### Invalidação de cache (bump de Version + kcache)
+
+Limpar só `~/.cache/ksvg-elements` **não basta**: o KSvg também mantém um
+`KImageCache` de pixmaps por tema em `~/.cache/plasma_theme_Nocturne.kcache`, e o
+`CacheId` é derivado do caminho + `lastModified`. O caminho confiável para forçar
+rebuild é: **bumpar `Version` no `metadata.json`** (gatilho oficial de
+invalidação do Plasma) **E** remover `plasma_theme_Nocturne.kcache`. O
+`install.sh`/`uninstall.sh` já removem esse kcache junto do `ksvg-elements`.
+
+### `[ContrastEffect]` reforça a translucidez
+
+O `plasmarc` do tema agora inclui `[ContrastEffect] enabled=true` (com
+`contrast`/`intensity`/`saturation`), que acentua a percepção de translucidez
+atrás do popup — a seção estava ausente e o contraste não carregava em runtime.
+`[AdaptiveTransparency] enabled=true` é preservada.
+(develop.kde.org: [Background SVG format](https://develop.kde.org/docs/plasma/theme/background-svg/).)
+
+Lembretes de edição:
+
 - `.svgz` é SVG gzipado: descompactar com `zcat`, editar o XML, validar com
   `xml.dom.minidom`, recompactar com `gzip -n -c > ARQ.svgz` (o `-n` evita gravar
   timestamp/nome e mantém o diff estável). Depois limpar `~/.cache/ksvg-elements`
-  e reaplicar, senão o cache mascara a mudança.
+  **e** `~/.cache/plasma_theme_Nocturne.kcache` e reaplicar, senão o cache
+  mascara a mudança.
+
+> Nota de conformidade: o conteúdo das fontes acima foi reformulado/parafraseado
+> para fins de licenciamento; consulte os links para o texto original.
 
 ## GTK
 

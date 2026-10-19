@@ -118,6 +118,10 @@ reconfig() {
 # garante que as curvas/botões novos apareçam.
 rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/ksvg-elements" 2>/dev/null || true
 
+# O KImageCache de pixmaps do tema (plasma_theme_Nocturne.kcache) retém
+# renders antigos e mascara mudanças de SVG; removê-lo força rebuild.
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/plasma_theme_Nocturne.kcache" 2>/dev/null || true
+
 # Toggle Breeze -> Nocturne força o KWin a reconstruir a decoração.
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze"
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme   "Breeze"
