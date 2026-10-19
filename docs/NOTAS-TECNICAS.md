@@ -193,6 +193,45 @@ Lembretes de edição:
 > Nota de conformidade: o conteúdo das fontes acima foi reformulado/parafraseado
 > para fins de licenciamento; consulte os links para o texto original.
 
+### Blur não aparece mesmo com tema correto? É o KWin, não o tema
+
+Armadilha que custou várias rodadas: depois de instalar um tema translúcido com
+`mask-*` corretos, `Version` bumpada e cache limpo, o painel/popup **ainda** pode
+aparecer 100% sólido. Antes de culpar o SVG, verifique o **estado de runtime do
+KWin** — porque o blur é desenhado pelo compositor, e um `dbus-send ...
+reconfigure` **não recarrega efeitos**; só um **restart/relogin do KWin** carrega
+efeito novo e recria o pipeline do blur.
+
+Sintoma diagnóstico (sem precisar olhar a tela):
+
+```bash
+# Há quanto tempo o KWin está rodando? Se for dias e você acabou de mexer no
+# tema/efeitos, o compositor está com estado velho:
+ps -eo pid,etime,cmd | grep '[k]win_wayland'
+
+# O efeito contrast carrega? Se contrastEnabled=true no kwinrc mas isto for
+# false, o KWin não absorveu a config nova -> precisa reiniciar:
+dbus-send --session --print-reply --dest=org.kde.KWin /Effects \
+  org.kde.kwin.Effects.isEffectLoaded string:contrast
+```
+
+Cuidado com um falso negativo: a propriedade `activeEffects` é um **instantâneo
+dos efeitos desenhando naquele frame**, não a lista de efeitos aptos. `blur` só
+entra em `activeEffects` **enquanto há um popup translúcido aberto na tela** —
+então `activeEffects` sem `blur` num instante ocioso **não** prova que o blur
+está quebrado. Use `loadedEffects`/`isEffectLoaded` para "está carregado" e um
+teste visual (Kickoff sobre janela clara) para "está desenhando".
+
+Correção (interativa, não dá para script de instalação fazer): **logout/login**
+da sessão Wayland recarrega o KWin do zero. Alternativa: desmarcar e remarcar
+"Blur" em *System Settings → Desktop → Desktop Effects* (força unload→load).
+`kwin_wayland --replace` existe mas no Wayland nem sempre é confiável.
+
+Confirmado neste ambiente (Plasma 6.7.5, Wayland, AMD RX 550, OpenGL/EGL real):
+o backend e o tema estavam corretos; o blur não desenhava porque o
+`kwin_wayland` rodava há 6 dias sem reiniciar após as mudanças.
+(discuss.kde.org: [Proper way to reload a KWin effect](https://discuss.kde.org/t/proper-way-to-reload-a-kwin-effect/46880).)
+
 ## GTK
 
 Apps GTK ignoram o Plasma. Dois níveis de configuração:
