@@ -24,9 +24,13 @@ custou horas uma vez.
   `flatpak override --user` global com `filesystems=xdg-config/gtk-4.0:ro`
   (confirmado: `org.gnome.Calculator` pega o tema sem config extra). Portanto NÃO
   force overrides nem mexa no `install.sh` para isso sem necessidade.
-  - Ressalva: o override cobre só **gtk-4.0**. Apps **GTK3** em Flatpak podem não
-    receber `gtk-3.0/gtk.css` (faltaria `xdg-config/gtk-3.0:ro`). Confirme com um
-    app GTK3 Flatpak real antes de assumir paridade GTK3/GTK4.
+  - Apps **GTK3** clássicos em Flatpak exigem um tema GTK3 **nomeado presente no
+    sandbox**: `flatpak override --user --env=GTK_THEME=Breeze:dark` (variante
+    escura do `Breeze` da extensão `org.gtk.Gtk3theme.Breeze`, NÃO `Breeze-Dark`,
+    que não existe no sandbox). Sem isso o GTK3 cai no Adwaita claro e o
+    `gtk.css` do host fica aplicado sobre o tema errado; com isso ele aplica por
+    cima. O `install.sh` já faz esse override. GTK4/libadwaita não precisa dele.
+    Detalhes em `docs/NOTAS-TECNICAS.md` (seção GTK).
   - Para testar um Flatpak: `flatpak info --show-permissions <app-id>` mostra os
     `filesystems` efetivos; apps já abertos precisam ser reabertos.
 

@@ -174,6 +174,62 @@ Apps GTK ignoram o Plasma. Dois níveis de configuração:
 
 Apps GTK já abertos precisam ser reabertos para pegar o tema.
 
+### Flatpaks GTK3 clássicos: precisam de um tema GTK3 NOMEADO no sandbox
+
+Apps GTK3 clássicos em Flatpak (ex.: pdfarranger) não aplicavam o Nocturne,
+enquanto apps GTK4/libadwaita (ex.: Calculadora) aplicavam. A causa não é acesso
+a arquivo — o `gtk.css` do Nocturne já chega ao sandbox via
+`xdg-config/gtk-3.0:ro` e é lido. O problema é o **tema base**:
+
+- O GTK3 clássico só aplica o `gtk.css` (que apenas sobrescreve `@define-color`)
+  **por cima de um tema base nomeado**. Se o nome do tema não existe no escopo do
+  Flatpak, o GTK3 cai no **Adwaita claro** de fallback e as cores do Nocturne
+  ficam aplicadas sobre o tema errado (janela clara).
+- Dentro do sandbox **não existe** um tema `Breeze-Dark` — só existe `Breeze`,
+  fornecido pela extensão de runtime `org.gtk.Gtk3theme.Breeze`. Logo o
+  `Breeze-Dark` que o host usa não resolve no sandbox.
+- A **dconf/gsettings do host NÃO chega aos sandboxes Flatpak**. Portanto o
+  `gsettings set ... gtk-theme Breeze-Dark` que o `install.sh` faz é **inócuo
+  para Flatpaks** (serve só para apps GTK nativos).
+- **libadwaita/GTK4 não precisa de tema nomeado:** lê o `gtk-4.0/gtk.css` direto
+  por cima do próprio estilo e segue o `color-scheme` do portal — por isso a
+  Calculadora já funcionava.
+
+**Correção (feita pelo `install.sh`):** definir o `GTK_THEME` dos Flatpaks para a
+variante escura do tema `Breeze` que já existe no sandbox, via override de
+usuário:
+
+```bash
+flatpak override --user --env=GTK_THEME=Breeze:dark
+```
+
+Use `Breeze:dark` (dois-pontos + variante `dark` do tema `Breeze` presente), NÃO
+`Breeze-Dark` (inexistente no sandbox — dá fallback claro). O `gtk.css` do
+Nocturne continua aplicando as cores por cima.
+
+**Verificação** (medir o fundo da janela dentro do sandbox, sem abrir a GUI;
+troque `<app-id>` por um Flatpak GTK3, ex.: `com.github.jeromerobert.pdfarranger`):
+
+```bash
+flatpak run --env=GTK_THEME=Breeze:dark --command=sh <app-id> -c '
+python3 -c "import gi; gi.require_version(\"Gtk\",\"3.0\"); from gi.repository import Gtk; w=Gtk.Window(); w.realize(); c=w.get_style_context().get_background_color(Gtk.StateFlags.NORMAL); print(round(c.red*255),round(c.green*255),round(c.blue*255))"'
+# -> deve imprimir cor escura (~ 32 35 38), NÃO ~ (246 245 244) do Adwaita claro.
+```
+
+Depois reabra o app (apps Flatpak já abertos não pegam o override até reiniciar):
+
+```bash
+flatpak kill <app-id> 2>/dev/null; flatpak run <app-id>
+```
+
+Fontes (documentação pública; conteúdo reescrito para conformidade de
+licenciamento): temas GTK em Flatpak precisam estar presentes no sandbox como
+extensão `org.gtk.Gtk3theme.<Nome>`, pois o sandbox não enxerga temas em `/usr`
+do host ([gist lmintmate](https://gist.github.com/lmintmate/b512680c0d1ee8f41b8f43cd2c81dc2c));
+o workaround para o tema claro em Flatpak GTK3 é forçar `GTK_THEME` via
+`flatpak override` ([flathub/org.gtk.Gtk3theme.Breeze#97](https://github.com/flathub/org.gtk.Gtk3theme.Breeze/issues/97),
+[flatpak/flatpak#4239](https://github.com/flatpak/flatpak/issues/4239)).
+
 ### Moldura CSD (borda/cantos) alinhada ao Aurorae
 
 Os `gtk.css` passaram a sobrescrever também a **geometria da moldura CSD**

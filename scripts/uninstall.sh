@@ -28,6 +28,18 @@ rm -rf "$DATA/plasma/look-and-feel/org.nocturne.global"
 say "Removendo overrides GTK (gtk.css)"
 rm -f "$CONF/gtk-3.0/gtk.css" "$CONF/gtk-4.0/gtk.css"
 
+# Reverte CIRURGICAMENTE só os overrides de Flatpak que o install.sh criou.
+# NÃO use 'flatpak override --user --reset': isso apagaria TODOS os overrides do
+# usuário, inclusive os que não são nossos (ex.: um unset-environment=
+# QT_QPA_PLATFORMTHEME pré-existente no override global). Removemos apenas o
+# GTK_THEME e os nossos filesystems de leitura dos gtk.css.
+if command -v flatpak >/dev/null 2>&1; then
+    say "Revertendo overrides GTK de Flatpaks"
+    flatpak override --user --unset-environment=GTK_THEME 2>/dev/null || true
+    flatpak override --user --nofilesystem=xdg-config/gtk-3.0 2>/dev/null || true
+    flatpak override --user --nofilesystem=xdg-config/gtk-4.0 2>/dev/null || true
+fi
+
 say "Limpando cache de SVG"
 rm -rf "${XDG_CACHE_HOME:-$HOME/.cache}/ksvg-elements" 2>/dev/null || true
 

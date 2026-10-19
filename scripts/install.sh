@@ -70,6 +70,23 @@ if command -v gsettings >/dev/null 2>&1; then
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"  2>/dev/null || true
 fi
 
+# Apps GTK3 clássicos em Flatpak caem no Adwaita claro sem um tema GTK3 NOMEADO
+# presente no sandbox; a dconf/gsettings do host NÃO chega ao sandbox, então o
+# gsettings acima é inócuo para Flatpaks. A correção é definir GTK_THEME para a
+# variante escura do tema 'Breeze' que JÁ existe no sandbox (org.gtk.Gtk3theme.
+# Breeze). Use 'Breeze:dark' (dois-pontos + variante), NÃO 'Breeze-Dark' (não
+# existe no sandbox e dá fallback claro). O gtk.css do Nocturne aplica por cima.
+# Ver docs/NOTAS-TECNICAS.md (seção GTK).
+if command -v flatpak >/dev/null 2>&1; then
+    say "Configurando tema GTK dos Flatpaks (GTK_THEME=Breeze:dark)"
+    flatpak override --user --env=GTK_THEME=Breeze:dark 2>/dev/null || true
+    # Defensivamente garante leitura dos gtk.css do host dentro dos sandboxes.
+    flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
+    flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
+else
+    say "flatpak não encontrado; pulei o tema GTK de Flatpaks (ok em ambientes não-Flatpak)"
+fi
+
 say "Aplicando tema de ícones Tela-dark"
 # Só aplica se o tema existir; caso contrário mantém o atual.
 if [ -f "$DATA/icons/Tela-dark/index.theme" ] || [ -f /usr/share/icons/Tela-dark/index.theme ]; then
