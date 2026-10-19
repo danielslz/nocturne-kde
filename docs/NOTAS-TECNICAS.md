@@ -125,6 +125,42 @@ radiais dos cantos não ficavam simétricos e as sombras laterais sólidas se
 somavam. **Solução:** remover todas as regiões `shadow-*`. Sem sombra custom, o
 KWin aplica a própria sombra nativa, que é simétrica e suave.
 
+## Blur atrás de painéis e popups: exige `hint-compositing-blur`
+
+Mesmo com o efeito de blur do KWin ligado (`kwinrc [Plugins] blurEnabled=true`)
+e o tema Nocturne ativo, os painéis e popups não borravam o fundo. Causa: no
+Plasma 6 o KSvg/FrameSvg só pede blur ao compositor quando o SVG de fundo tem um
+elemento com `id="hint-compositing-blur"`. Os SVGZ de fundo tinham apenas
+`hint-*-margin`, `hint-*-inset`, `hint-tile-center` e `mask-*` — nenhum pedia
+blur.
+
+**Correção:** adicionar um `<rect id="hint-compositing-blur">` (invisível,
+`fill:none`) cobrindo a área do tile `center` em cada SVG de fundo translúcido:
+
+- `widgets/panel-background.svgz` (painel — primário)
+- `widgets/background.svgz`
+- `dialogs/background.svgz` (popups)
+- `widgets/tooltip.svgz`
+
+Detalhes que valem lembrar:
+
+- O KWin usa só a **existência e os limites (bounds)** do elemento, não o
+  preenchimento. Os bounds do rect definem a região borrada, então ele cobre a
+  mesma área do `center`.
+- O fundo precisa ser **translúcido** (alpha < 1) para o blur aparecer. O
+  `panel-background`, `dialogs/background` e `tooltip` já usam `opacity:0.85` com
+  `ColorScheme-Background`, então o blur surge só com o hint presente. O
+  `widgets/background` tem o `center` opaco (`opacity:1`); o hint foi adicionado
+  mesmo assim (fica inerte enquanto o fundo for opaco) e a opacidade NÃO foi
+  mexida, para não alterar o visual de todos os frames de widget — mudança
+  mínima e sem efeito colateral.
+- Os arquivos em `.../opaque/` ficam **de fora de propósito** (fallback sem
+  transparência): não têm o hint e não devem ter.
+- `.svgz` é SVG gzipado: descompactar com `zcat`, editar o XML, validar com
+  `xml.dom.minidom`, recompactar com `gzip -n -c > ARQ.svgz` (o `-n` evita gravar
+  timestamp/nome e mantém o diff estável). Depois limpar `~/.cache/ksvg-elements`
+  e reaplicar, senão o cache mascara a mudança.
+
 ## GTK
 
 Apps GTK ignoram o Plasma. Dois níveis de configuração:
