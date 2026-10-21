@@ -29,17 +29,32 @@ say "Removendo overrides GTK (gtk.css)"
 rm -f "$CONF/gtk-3.0/gtk.css" "$CONF/gtk-4.0/gtk.css"
 
 # Reverte CIRURGICAMENTE só os overrides de Flatpak que o install.sh criou.
-# NÃO use 'flatpak override --user --reset': isso apagaria TODOS os overrides do
-# usuário, inclusive os que não são nossos (ex.: um unset-environment=
-# QT_QPA_PLATFORMTHEME pré-existente no override global). Removemos apenas o
-# GTK_THEME e os nossos filesystems de leitura dos gtk.css.
-# Ressalva: --unset-environment=GTK_THEME é incondicional (o flatpak não remove
-# "só se o valor for X"). Se você tiver definido um GTK_THEME próprio no override
-# global por outro motivo, ele será removido junto. No fluxo normal do Nocturne o
-# único GTK_THEME é o nosso (Breeze:dark), então isso não é um problema.
+# O install aplica GTK_THEME=Breeze:dark POR-APP (nunca global) aos GTK3
+# clássicos; revertemos os MESMOS apps com '--reset <app-id>' (mesma lista +
+# mesma detecção do install).
+# NUNCA use 'flatpak override --user --reset' SEM app-id: isso apagaria TODOS os
+# overrides do usuário, inclusive um '--unset-environment=QT_QPA_PLATFORMTHEME'
+# pré-existente no override global que NÃO é nosso — ele é PRESERVADO aqui.
+# Ressalva: '--reset <app-id>' remove TODOS os overrides DAQUELE app. É seguro
+# aqui porque o Nocturne não cria outros overrides nesses apps; se você tiver
+# criado overrides manuais nesses app-ids, reaplique-os depois.
 if command -v flatpak >/dev/null 2>&1; then
-    say "Revertendo overrides GTK de Flatpaks"
-    flatpak override --user --unset-environment=GTK_THEME 2>/dev/null || true
+    say "Revertendo overrides GTK por-app dos Flatpaks GTK3"
+    GTK3_APPS=("com.github.jeromerobert.pdfarranger")
+    if installed=$(flatpak list --app --columns=application 2>/dev/null); then
+        while IFS= read -r app; do
+            [[ -z "$app" ]] && continue
+            if flatpak info --show-runtime "$app" 2>/dev/null | grep -q 'Gtk3theme'; then
+                GTK3_APPS+=("$app")
+            fi
+        done <<< "$installed"
+    fi
+    for app in "${GTK3_APPS[@]}"; do
+        if flatpak info "$app" >/dev/null 2>&1; then
+            flatpak override --user --reset "$app" 2>/dev/null || true
+        fi
+    done
+    # Remove os filesystems de leitura dos gtk.css que o install adicionou (globais).
     flatpak override --user --nofilesystem=xdg-config/gtk-3.0 2>/dev/null || true
     flatpak override --user --nofilesystem=xdg-config/gtk-4.0 2>/dev/null || true
 fi

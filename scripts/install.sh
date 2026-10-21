@@ -78,11 +78,43 @@ fi
 # existe no sandbox e dá fallback claro). O gtk.css do Nocturne aplica por cima.
 # Ver docs/NOTAS-TECNICAS.md (seção GTK).
 if command -v flatpak >/dev/null 2>&1; then
-    say "Configurando tema GTK dos Flatpaks (GTK_THEME=Breeze:dark)"
-    flatpak override --user --env=GTK_THEME=Breeze:dark 2>/dev/null || true
-    # Defensivamente garante leitura dos gtk.css do host dentro dos sandboxes.
+    # Garante leitura dos gtk.css do host dentro dos sandboxes. Isto é GLOBAL e
+    # é seguro para todos (GTK3 e GTK4): só concede acesso de LEITURA aos
+    # arquivos, não força nenhum tema.
     flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
     flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
+
+    # IMPORTANTE: NÃO aplicar GTK_THEME GLOBAL. Um GTK_THEME global faz os apps
+    # GTK4/libadwaita (ex.: org.gnome.Calculator) carregarem o tema nomeado e
+    # IGNORAREM o ~/.config/gtk-4.0/gtk.css do Nocturne (foi exatamente o bug).
+    # GTK_THEME só é necessário para GTK3 clássicos (ex.: pdfarranger) e deve ser
+    # aplicado POR-APP. libadwaita/GTK4 NÃO deve ter GTK_THEME setado.
+    GTK3_APPS=("com.github.jeromerobert.pdfarranger")
+
+    # Detecção automática tolerante a falha: Flatpaks cujo runtime depende da
+    # extensão org.gtk.Gtk3theme.* são GTK3 clássicos e precisam de tema nomeado.
+    # Tudo protegido por 'if'/'|| true' para não abortar sob 'set -e'.
+    if installed=$(flatpak list --app --columns=application 2>/dev/null); then
+        while IFS= read -r app; do
+            [[ -z "$app" ]] && continue
+            if flatpak info --show-runtime "$app" 2>/dev/null | grep -q 'Gtk3theme'; then
+                GTK3_APPS+=("$app")
+            fi
+        done <<< "$installed"
+    fi
+
+    # Aplica GTK_THEME=Breeze:dark POR-APP só aos GTK3 instalados (nunca GTK4).
+    say "Configurando tema GTK dos Flatpaks GTK3 (GTK_THEME=Breeze:dark, por-app)"
+    for app in "${GTK3_APPS[@]}"; do
+        if flatpak info "$app" >/dev/null 2>&1; then
+            say "  GTK_THEME=Breeze:dark (por-app) -> $app"
+            flatpak override --user --env=GTK_THEME=Breeze:dark "$app" 2>/dev/null || true
+        fi
+    done
+
+    echo "  Dica: se algum app GTK3 não pegar o tema, aplique manualmente:"
+    echo "      flatpak override --user --env=GTK_THEME=Breeze:dark <app-id>"
+    echo "  (NUNCA sem app-id: GTK_THEME global quebra GTK4/libadwaita.)"
 else
     say "flatpak não encontrado; pulei o tema GTK de Flatpaks (ok em ambientes não-Flatpak)"
 fi

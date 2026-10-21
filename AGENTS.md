@@ -25,12 +25,19 @@ custou horas uma vez.
   (confirmado: `org.gnome.Calculator` pega o tema sem config extra). Portanto NÃO
   force overrides nem mexa no `install.sh` para isso sem necessidade.
   - Apps **GTK3** clássicos em Flatpak exigem um tema GTK3 **nomeado presente no
-    sandbox**: `flatpak override --user --env=GTK_THEME=Breeze:dark` (variante
-    escura do `Breeze` da extensão `org.gtk.Gtk3theme.Breeze`, NÃO `Breeze-Dark`,
-    que não existe no sandbox). Sem isso o GTK3 cai no Adwaita claro e o
-    `gtk.css` do host fica aplicado sobre o tema errado; com isso ele aplica por
-    cima. O `install.sh` já faz esse override. GTK4/libadwaita não precisa dele.
-    Detalhes em `docs/NOTAS-TECNICAS.md` (seção GTK).
+    sandbox** via `GTK_THEME=Breeze:dark` (variante escura do `Breeze` da
+    extensão `org.gtk.Gtk3theme.Breeze`, NÃO `Breeze-Dark`, que não existe no
+    sandbox). Sem isso o GTK3 cai no Adwaita claro e o `gtk.css` do host fica
+    aplicado sobre o tema errado; com isso ele aplica por cima. **Aplique esse
+    `GTK_THEME` SÓ POR-APP, NUNCA global:** um `flatpak override --user
+    --env=GTK_THEME=Breeze:dark` sem app-id QUEBRA os apps GTK4/libadwaita (ex.:
+    `org.gnome.Calculator`), que passam a carregar o tema nomeado e IGNORAR o
+    `~/.config/gtk-4.0/gtk.css` do Nocturne. **libadwaita/GTK4 NÃO deve ter
+    `GTK_THEME` setado** — lê o `gtk-4.0/gtk.css` direto. O `install.sh` aplica o
+    override por-app automaticamente (detecção da extensão `org.gtk.Gtk3theme.*`
+    + lista de GTK3 conhecidos); se algum GTK3 teimar, aplique manualmente com
+    `flatpak override --user --env=GTK_THEME=Breeze:dark <app-id>`. Detalhes em
+    `docs/NOTAS-TECNICAS.md` (seção GTK).
   - Para testar um Flatpak: `flatpak info --show-permissions <app-id>` mostra os
     `filesystems` efetivos; apps já abertos precisam ser reabertos.
 

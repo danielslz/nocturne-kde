@@ -174,12 +174,17 @@ rebuild é: **bumpar `Version` no `metadata.json`** (gatilho oficial de
 invalidação do Plasma) **E** remover `plasma_theme_Nocturne.kcache`. O
 `install.sh`/`uninstall.sh` já removem esse kcache junto do `ksvg-elements`.
 
-### `[ContrastEffect]` reforça a translucidez
+### `[ContrastEffect]` era config morta — removida do `plasmarc`
 
-O `plasmarc` do tema agora inclui `[ContrastEffect] enabled=true` (com
-`contrast`/`intensity`/`saturation`), que acentua a percepção de translucidez
-atrás do popup — a seção estava ausente e o contraste não carregava em runtime.
-`[AdaptiveTransparency] enabled=true` é preservada.
+Uma versão anterior do `plasmarc` incluía `[ContrastEffect] enabled=true` (com
+`contrast`/`intensity`/`saturation`) acreditando que reforçaria a translucidez
+atrás dos popups. **Isso era config morta nesta build:** o efeito *Background
+Contrast* NÃO existe no KWin 6.7.5 deste host — não há `contrast.json` nos
+builtin-effects (só `blur.json`), então nada lê esses valores. A seção
+`[ContrastEffect]` foi **removida** do `plasmarc`. Pelo mesmo motivo, o
+`contrastEnabled=true` que o `install.sh` grava no `kwinrc` é **inócuo** nesta
+build — foi mantido no script por não fazer mal e por ser trivial de reativar se
+o efeito voltar. `[AdaptiveTransparency] enabled=true` é preservada.
 (develop.kde.org: [Background SVG format](https://develop.kde.org/docs/plasma/theme/background-svg/).)
 
 Lembretes de edição:
@@ -193,44 +198,75 @@ Lembretes de edição:
 > Nota de conformidade: o conteúdo das fontes acima foi reformulado/parafraseado
 > para fins de licenciamento; consulte os links para o texto original.
 
-### Blur não aparece mesmo com tema correto? É o KWin, não o tema
+### Blur não aparece mesmo com tema correto? É o KWin, não o tema (regressão 6.7)
 
 Armadilha que custou várias rodadas: depois de instalar um tema translúcido com
-`mask-*` corretos, `Version` bumpada e cache limpo, o painel/popup **ainda** pode
-aparecer 100% sólido. Antes de culpar o SVG, verifique o **estado de runtime do
-KWin** — porque o blur é desenhado pelo compositor, e um `dbus-send ...
-reconfigure` **não recarrega efeitos**; só um **restart/relogin do KWin** carrega
-efeito novo e recria o pipeline do blur.
+`mask-*` corretos, `Version` bumpada e cache limpo, o painel/popup **ainda**
+aparece 100% sólido. **Não é o tema — é uma regressão da série KWin 6.7.**
 
-Sintoma diagnóstico (sem precisar olhar a tela):
+**Conclusão final confirmada neste host (Plasma 6.7.5, Wayland):**
+
+- **(a) Reiniciar/relogar o KWin NÃO resolveu.** Essa era a hipótese anterior
+  (compositor com estado velho) e foi **descartada**: mesmo com o
+  `kwin_wayland` reiniciado do zero o blur continua ausente.
+- **(b) Causa raiz — regressão da série KWin 6.7:** o KWin **removeu o protocolo
+  `org_kde_kwin_blur`** e migrou para o protocolo Wayland `ext-background-effect`.
+  Clientes e temas que ainda pedem blur pelo caminho antigo deixaram de ser
+  borrados.
+- **(c) Confirmação local:** `wayland-info` **não anuncia mais** o global
+  `org_kde_kwin_blur_manager`.
+  ```bash
+  # Se NÃO listar org_kde_kwin_blur_manager, o compositor não expõe mais o
+  # protocolo antigo de blur (regressão 6.7):
+  wayland-info 2>/dev/null | grep -i blur || echo "sem org_kde_kwin_blur_manager"
+  ```
+- **(d) Teste de isolamento decisivo:** trocar para `breeze-dark` TAMBÉM não
+  borra o Kickoff neste host ⇒ o problema é do sistema/compositor, não do tema.
+  O Nocturne está correto.
+- **(e) Background Contrast** não existe nesta build (sem `contrast.json`) — por
+  isso `[ContrastEffect]` foi removido do `plasmarc` e `contrastEnabled` no
+  `kwinrc` é inócuo (ver seção acima).
+- **(f) Não recomendar forks** tipo `kwin-effects-forceblur` em host imutável
+  ostree: exigem recompilar/reinstalar a cada update do sistema (o efeito só
+  funciona na versão exata do KWin para a qual foi compilado). O caminho é
+  **aguardar o fix upstream**; até lá o tema permanece translúcido, só sem o
+  blur.
+
+**Nota lateral (ainda válida, mas não é o caso aqui):** a propriedade
+`activeEffects` é um **instantâneo dos efeitos desenhando naquele frame**, não a
+lista de efeitos aptos; `blur` só entra em `activeEffects` **enquanto há um popup
+translúcido aberto na tela**. Use `loadedEffects`/`isEffectLoaded` para "está
+carregado" e um teste visual (Kickoff sobre janela clara) para "está
+desenhando". Neste host, porém, o problema **não** é efeito não-carregado e sim o
+protocolo removido — por isso a investigação de runtime abaixo não ajuda mais.
 
 ```bash
-# Há quanto tempo o KWin está rodando? Se for dias e você acabou de mexer no
-# tema/efeitos, o compositor está com estado velho:
+# (diagnóstico de runtime — hoje inconclusivo porque a causa é o protocolo):
 ps -eo pid,etime,cmd | grep '[k]win_wayland'
-
-# O efeito contrast carrega? Se contrastEnabled=true no kwinrc mas isto for
-# false, o KWin não absorveu a config nova -> precisa reiniciar:
 dbus-send --session --print-reply --dest=org.kde.KWin /Effects \
-  org.kde.kwin.Effects.isEffectLoaded string:contrast
+  org.kde.kwin.Effects.isEffectLoaded string:blur
 ```
 
-Cuidado com um falso negativo: a propriedade `activeEffects` é um **instantâneo
-dos efeitos desenhando naquele frame**, não a lista de efeitos aptos. `blur` só
-entra em `activeEffects` **enquanto há um popup translúcido aberto na tela** —
-então `activeEffects` sem `blur` num instante ocioso **não** prova que o blur
-está quebrado. Use `loadedEffects`/`isEffectLoaded` para "está carregado" e um
-teste visual (Kickoff sobre janela clara) para "está desenhando".
+**O que PRESERVAR:** os `mask-*` no fundo, a variante `translucent/`, o bump de
+`Version` + remoção do `plasma_theme_Nocturne.kcache` continuam corretos e são o
+caminho certo **se o blur voltar** via fix upstream — não remover nada disso.
 
-Correção (interativa, não dá para script de instalação fazer): **logout/login**
-da sessão Wayland recarrega o KWin do zero. Alternativa: desmarcar e remarcar
-"Blur" em *System Settings → Desktop → Desktop Effects* (força unload→load).
-`kwin_wayland --replace` existe mas no Wayland nem sempre é confiável.
+Fontes (documentação pública; conteúdo reformulado/parafraseado para
+conformidade de licenciamento — ver os links para o texto original):
 
-Confirmado neste ambiente (Plasma 6.7.5, Wayland, AMD RX 550, OpenGL/EGL real):
-o backend e o tema estavam corretos; o blur não desenhava porque o
-`kwin_wayland` rodava há 6 dias sem reiniciar após as mudanças.
-(discuss.kde.org: [Proper way to reload a KWin effect](https://discuss.kde.org/t/proper-way-to-reload-a-kwin-effect/46880).)
+- Ghostty #13068 — KDE 6.7 removeu o protocolo de blur e migrou para a versão
+  Wayland; o fundo deixou de ser borrado:
+  [github.com/ghostty-org/ghostty#13068](https://github.com/ghostty-org/ghostty/discussions/13068).
+- Alacritty #8987 — blur parou no KWin 6.7 (Wayland) e volta ao reverter para
+  6.5: [github.com/alacritty/alacritty#8987](https://github.com/alacritty/alacritty/issues/8987).
+- Kitty #9534 — KDE abandonando o `kde-blur` em favor do `ext-background-effect`
+  (mergeado no Wayland):
+  [github.com/kovidgoyal/kitty#9534](https://github.com/kovidgoyal/kitty/issues/9534).
+- This Week in Plasma (bug-fixing pós-6.7):
+  [blogs.kde.org/this-week-in-plasma](https://blogs.kde.org/categories/this-week-in-plasma/).
+- Forks de force-blur exigem rebuild por versão do KWin (por que evitá-los em
+  host ostree):
+  [github.com/taj-ny/kwin-effects-forceblur](https://github.com/taj-ny/kwin-effects-forceblur).
 
 ## GTK
 
