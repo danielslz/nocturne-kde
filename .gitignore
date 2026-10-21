@@ -2,6 +2,8 @@
 *.kcache
 *~
 .DS_Store
+# artefatos de workflows de IA (planos, relatórios, reviews — uso interno)
+.agents/
 
 # nada de dados pessoais ou screenshots com conteúdo de tela crua
 # (adicione aqui qualquer print que não deva ir ao repositório)
